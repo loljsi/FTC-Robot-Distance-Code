@@ -1,24 +1,91 @@
-# Compiled class file
-*.class
+package org.firstinspires.ftc.teamcode;
 
-# Log file
-*.log
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
-# BlueJ files
-*.ctxt
+@com.qualcomm.robotcore.eventloop.opmode.Autonomous(name = "SimpleAutonomous", group = "Autonomous")
+public class SimpleAutonomous extends LinearOpMode {
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+    private DcMotor motor0;
+    private DcMotor motor1;
+    private DcMotor motor2;
+    private DcMotor motor3;
 
-# Package Files #
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
+    private final double COUNTS_PER_MOTOR_REV = 28; // Encoder counts per motor revolution
+    private final double GEAR_REDUCTION = 5; // Gear reduction
+    private final double WHEEL_DIAMETER_INCHES = 3.5; // Diameter of the wheel in inches
+    private final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * GEAR_REDUCTION) / (WHEEL_DIAMETER_INCHES * Math.PI);
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
+    @Override
+    public void runOpMode() {
+        motor0 = hardwareMap.dcMotor.get("motor0");
+        motor1 = hardwareMap.dcMotor.get("motor1");
+        motor2 = hardwareMap.dcMotor.get("motor2");
+        motor3 = hardwareMap.dcMotor.get("motor3");
+
+        motor0.setDirection(DcMotor.Direction.FORWARD);
+        motor1.setDirection(DcMotor.Direction.FORWARD);
+        motor2.setDirection(DcMotor.Direction.FORWARD);
+        motor3.setDirection(DcMotor.Direction.FORWARD);
+
+        waitForStart();
+
+        // Move forward for 25 inches
+        encoderDrive(1, 25, 5);
+
+        // Stop the robot
+        stopRobot();
+    }
+
+    private void encoderDrive(double speed, double inches, double timeout) {
+        int newTarget;
+        ElapsedTime runtime = new ElapsedTime();
+
+        // Determine new target position and reset the encoder target
+        newTarget = motor0.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH);
+        motor0.setTargetPosition(newTarget);
+        motor1.setTargetPosition(newTarget);
+        motor2.setTargetPosition(newTarget);
+        motor3.setTargetPosition(newTarget);
+
+        // Turn On RUN_TO_POSITION
+        motor0.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motor3.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        // Reset the timeout time and start motion
+        runtime.reset();
+        motor0.setPower(Math.abs(speed));
+        motor1.setPower(Math.abs(speed));
+        motor2.setPower(Math.abs(speed));
+        motor3.setPower(Math.abs(speed));
+
+        // Keep looping while we are still active, and there is time left, and both motors are running
+        while (opModeIsActive() && runtime.seconds() < timeout &&
+                (motor0.isBusy() && motor1.isBusy() && motor2.isBusy() && motor3.isBusy())) {
+            // Display telemetry message for the driver
+            telemetry.addData("Path1", "Running to %7d", newTarget);
+            telemetry.addData("Path2", "Running at %7d", motor0.getCurrentPosition());
+            telemetry.update();
+        }
+
+        // Stop the robot and turn off RUN_TO_POSITION
+        stopRobot();
+    }
+
+    private void stopRobot() {
+        motor0.setPower(0);
+        motor1.setPower(0);
+        motor2.setPower(0);
+        motor3.setPower(0);
+
+        // Turn off RUN_TO_POSITION
+        motor0.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motor3.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
+}
+
